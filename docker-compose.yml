@@ -1,0 +1,19 @@
+services:
+  dockui:
+    build: .
+    image: dockui:latest
+    container_name: dockui
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      - dockui-data:/data
+    environment:
+      DOCKUI_BIND: 0.0.0.0:8080
+      DOCKUI_DATA_DIR: /data
+      DOCKUI_RETENTION_DAYS: "7"
+
+volumes:
+  dockui-data:
