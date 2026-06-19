@@ -1,4 +1,4 @@
-# dockui
+# DockUI
 
 A minimal, low-overhead Docker dashboard for servers — container list, live logs, and
 CPU/memory (per container **and** whole host) with history. Think Dozzle, but built to
