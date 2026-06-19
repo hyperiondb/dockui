@@ -6,9 +6,10 @@ interface Props {
   running: number;
   total: number;
   connected: boolean;
+  onHome: () => void;
 }
 
-export function HostBar({ host, running, total, connected }: Props) {
+export function HostBar({ host, running, total, connected, onHome }: Props) {
   const ncpu = host?.ncpu ?? 1;
   const cpu = host?.cpu_pct ?? 0;
   const memUsed = host?.mem_used ?? 0;
@@ -17,9 +18,9 @@ export function HostBar({ host, running, total, connected }: Props) {
 
   return (
     <header className="hostbar">
-      <div className="brand">
+      <button className="brand" onClick={onHome} title="Host overview (home)">
         <span className="logo">▦</span> dockui
-      </div>
+      </button>
 
       <div className="gauge">
         <div className="gauge-head">

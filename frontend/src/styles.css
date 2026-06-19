@@ -63,6 +63,16 @@ button {
   display: flex;
   align-items: center;
   gap: 7px;
+  background: none;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  padding: 4px 6px;
+  margin-left: -6px;
+  border-radius: 6px;
+}
+.brand:hover {
+  background: var(--bg-row);
 }
 .brand .logo {
   color: var(--accent);
@@ -263,6 +273,59 @@ button {
 .empty-pane {
   margin: auto;
   color: var(--faint);
+}
+
+.home {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 22px;
+}
+.home-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.home-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+.home-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.stat-card {
+  background: var(--bg-elev);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.stat-k {
+  font-size: 11px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.stat-v {
+  font-size: 20px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.stat-sub {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--faint);
+}
+.home-hint {
+  color: var(--faint);
+  font-size: 12px;
+  margin-top: 18px;
 }
 
 .cheader {

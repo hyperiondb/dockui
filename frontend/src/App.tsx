@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ContainerInfo, ContainerStat, HostStat } from "./types";
 import { fetchContainers, openStatsStream } from "./api";
 import { HostBar } from "./components/HostBar";
 import { ContainerList } from "./components/ContainerList";
 import { LogViewer } from "./components/LogViewer";
 import { MetricsCharts } from "./components/MetricsCharts";
+import { HomeView } from "./components/HomeView";
 import { stateColor } from "./format";
 
 const SPARK_LEN = 40;
@@ -19,20 +20,12 @@ export default function App() {
   const [filter, setFilter] = useState("");
   const [showCharts, setShowCharts] = useState(true);
 
-  const selectedRef = useRef(selectedId);
-  selectedRef.current = selectedId;
-
   useEffect(() => {
     let alive = true;
     const load = async () => {
       try {
         const list = await fetchContainers();
-        if (!alive) return;
-        setContainers(list);
-        if (!selectedRef.current) {
-          const first = list.find((c) => c.state === "running") ?? list[0];
-          if (first) setSelectedId(first.id);
-        }
+        if (alive) setContainers(list);
       } catch {
         return;
       }
@@ -74,7 +67,13 @@ export default function App() {
 
   return (
     <div className="app">
-      <HostBar host={host} running={running} total={containers.length} connected={connected} />
+      <HostBar
+        host={host}
+        running={running}
+        total={containers.length}
+        connected={connected}
+        onHome={() => setSelectedId(null)}
+      />
       <div className="body">
         <ContainerList
           containers={containers}
@@ -110,7 +109,7 @@ export default function App() {
               <LogViewer container={selected} />
             </>
           ) : (
-            <div className="empty-pane">No container selected</div>
+            <HomeView host={host} running={running} total={containers.length} />
           )}
         </main>
       </div>
