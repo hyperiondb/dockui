@@ -4,6 +4,8 @@ A minimal, low-overhead Docker dashboard for servers — container list, live lo
 CPU/memory (per container **and** whole host) with history. Think Dozzle, but built to
 sip resources.
 
+![Overview](https://github.com/hyperiondb/dockui/blob/main/screen.png?raw=true)
+
 - **Rust backend** (axum + tokio, 2 worker threads), **React frontend** (Vite + uPlot),
   shipped as a **single static binary** with the UI embedded.
 - **Stats the cheap way:** reads cgroup counters straight from the filesystem instead of
