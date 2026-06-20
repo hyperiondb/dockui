@@ -1,11 +1,12 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ContainerInfo } from "../types";
-import { openLogStream } from "../api";
+import { openLogStream, restartContainer, startContainer, stopContainer } from "../api";
 
 const MAX_LINES = 5000;
 
 interface Props {
   container: ContainerInfo | null;
+  onAction?: () => void;
 }
 
 interface ParsedLine {
@@ -32,11 +33,12 @@ function parseLine(raw: string): ParsedLine {
   return { ts, msg, level, raw };
 }
 
-export function LogViewer({ container }: Props) {
+export function LogViewer({ container, onAction }: Props) {
   const [lines, setLines] = useState<string[]>([]);
   const [filter, setFilter] = useState("");
   const [paused, setPaused] = useState(false);
   const [wrap, setWrap] = useState(true);
+  const [busy, setBusy] = useState<"" | "start" | "stop" | "restart">("");
 
   const bufRef = useRef<string[]>([]);
   const pausedRef = useRef(paused);
@@ -87,9 +89,26 @@ export function LogViewer({ container }: Props) {
     atBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
   };
 
+  const act = async (verb: "start" | "stop" | "restart") => {
+    if (!container || busy) return;
+    setBusy(verb);
+    try {
+      if (verb === "start") await startContainer(container.id);
+      else if (verb === "stop") await stopContainer(container.id);
+      else await restartContainer(container.id);
+      onAction?.();
+    } catch {
+      onAction?.();
+    } finally {
+      setBusy("");
+    }
+  };
+
   if (!container) {
     return <div className="logs empty-pane">Select a container to view logs</div>;
   }
+
+  const running = container.state === "running";
 
   return (
     <div className="logs">
@@ -101,6 +120,20 @@ export function LogViewer({ container }: Props) {
           onChange={(e) => setFilter(e.target.value)}
         />
         <span className="logcount">{parsed.length} lines</span>
+        {running ? (
+          <>
+            <button className="btn go" onClick={() => act("restart")} disabled={!!busy}>
+              {busy === "restart" ? "Restarting…" : "Restart"}
+            </button>
+            <button className="btn danger" onClick={() => act("stop")} disabled={!!busy}>
+              {busy === "stop" ? "Stopping…" : "Stop"}
+            </button>
+          </>
+        ) : (
+          <button className="btn go" onClick={() => act("start")} disabled={!!busy}>
+            {busy === "start" ? "Starting…" : "Start"}
+          </button>
+        )}
         <button className={`btn ${paused ? "on" : ""}`} onClick={() => setPaused((p) => !p)}>
           {paused ? "Resume" : "Pause"}
         </button>

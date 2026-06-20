@@ -16,7 +16,8 @@ sip resources.
 - **Logs never lost:** when a container is first watched, dockui backfills its recent
   history, then streams new output into rotating files on disk and fans it out live to the
   browser over SSE (timestamp-deduplicated so restarts don't double up).
-- **Read-only:** lists, logs, and metrics only. No start/stop, no auth — put it behind your
+- **Lifecycle controls:** start / stop / restart a container from its log view. There is
+  **no auth**, so anyone who can reach dockui can control containers — put it behind your
   VPN / reverse proxy.
 
 ---
@@ -32,9 +33,14 @@ The compose file mounts three things:
 
 | Mount | Why |
 |---|---|
-| `/var/run/docker.sock:ro` | list containers, read events, stream logs |
+| `/var/run/docker.sock:ro` | list containers, read events, stream logs, start/stop/restart |
 | `/sys/fs/cgroup:ro` | direct CPU/memory counters (the low-overhead path) |
 | `dockui-data:/data` | SQLite history + streamed log files |
+
+> The `:ro` on the socket only makes the socket *file* read-only; it does **not** restrict
+> Docker API calls, so start/stop/restart work over it. If you want a truly view-only
+> deployment, front the daemon with a socket proxy (e.g. `tecnativa/docker-socket-proxy`)
+> that denies `POST`.
 
 > On **Linux** the cgroup mount enables the zero-cost stats path. On **Docker
 > Desktop (macOS/Windows)** there is no host cgroup tree, so dockui automatically
@@ -142,6 +148,9 @@ frontend/          React + Vite + uPlot, built into backend via rust-embed
 | GET | `/api/containers` | container list |
 | GET | `/api/containers/:id/history?range=1h` | per-container CPU/mem history |
 | GET | `/api/containers/:id/logs?tail=500` | SSE: log tail then live lines |
+| POST | `/api/containers/:id/start` | start the container |
+| POST | `/api/containers/:id/stop` | stop the container (10s grace) |
+| POST | `/api/containers/:id/restart` | restart the container (10s grace) |
 | GET | `/api/host/history?range=1h` | host CPU/mem history |
 | GET | `/api/stream/stats` | SSE: live host + all-container stats |
 | GET | `/api/health` | health check |

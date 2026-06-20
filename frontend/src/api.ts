@@ -29,6 +29,23 @@ export function fetchHostHistory(range: Range): Promise<HostHistoryPoint[]> {
   return getJSON<HostHistoryPoint[]>(`/api/host/history?range=${range}`);
 }
 
+async function action(id: string, verb: string): Promise<void> {
+  const res = await fetch(`/api/containers/${id}/${verb}`, { method: "POST" });
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+}
+
+export function startContainer(id: string): Promise<void> {
+  return action(id, "start");
+}
+
+export function stopContainer(id: string): Promise<void> {
+  return action(id, "stop");
+}
+
+export function restartContainer(id: string): Promise<void> {
+  return action(id, "restart");
+}
+
 export function openStatsStream(onTick: (tick: StatsTick) => void): EventSource {
   const es = new EventSource("/api/stream/stats");
   es.onmessage = (e) => {

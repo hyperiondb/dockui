@@ -5,8 +5,9 @@ use axum::extract::{Path, Query, State};
 use axum::http::{header, StatusCode, Uri};
 use axum::response::sse::{Event, KeepAlive, Sse};
 use axum::response::{IntoResponse, Response};
-use axum::routing::get;
+use axum::routing::{get, post};
 use axum::{Json, Router};
+use bollard::Docker;
 use futures_util::{Stream, StreamExt};
 use tokio::sync::broadcast;
 use tokio_stream::wrappers::BroadcastStream;
@@ -24,6 +25,7 @@ pub struct AppState {
     pub store: StoreHandle,
     pub logs: Arc<LogManager>,
     pub stats_tx: broadcast::Sender<Arc<StatsTick>>,
+    pub docker: Docker,
     pub cfg: Config,
 }
 
@@ -39,6 +41,9 @@ pub fn router(state: AppState) -> Router {
         .route("/api/containers", get(list_containers))
         .route("/api/containers/:id/history", get(container_history))
         .route("/api/containers/:id/logs", get(container_logs))
+        .route("/api/containers/:id/start", post(start_container))
+        .route("/api/containers/:id/stop", post(stop_container))
+        .route("/api/containers/:id/restart", post(restart_container))
         .route("/api/host/history", get(host_history))
         .route("/api/stream/stats", get(stream_stats))
         .fallback(static_handler)
@@ -51,6 +56,44 @@ async fn health() -> impl IntoResponse {
 
 async fn list_containers(State(st): State<AppState>) -> impl IntoResponse {
     Json(st.registry.list())
+}
+
+async fn run_action<F, Fut>(st: &AppState, id: &str, action: F) -> Response
+where
+    F: FnOnce(Docker, String) -> Fut,
+    Fut: std::future::Future<Output = anyhow::Result<()>>,
+{
+    if !is_hex_id(id) {
+        return (StatusCode::BAD_REQUEST, "invalid id").into_response();
+    }
+    match action(st.docker.clone(), id.to_string()).await {
+        Ok(()) => {
+            st.registry.refresh(&st.docker).await;
+            StatusCode::NO_CONTENT.into_response()
+        }
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
+    }
+}
+
+async fn start_container(State(st): State<AppState>, Path(id): Path<String>) -> Response {
+    run_action(&st, &id, |d, id| async move {
+        crate::docker::start_container(&d, &id).await
+    })
+    .await
+}
+
+async fn stop_container(State(st): State<AppState>, Path(id): Path<String>) -> Response {
+    run_action(&st, &id, |d, id| async move {
+        crate::docker::stop_container(&d, &id).await
+    })
+    .await
+}
+
+async fn restart_container(State(st): State<AppState>, Path(id): Path<String>) -> Response {
+    run_action(&st, &id, |d, id| async move {
+        crate::docker::restart_container(&d, &id).await
+    })
+    .await
 }
 
 fn window(range: &Option<String>, persist_ms: i64) -> (i64, i64) {

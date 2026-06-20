@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use anyhow::Result;
-use bollard::container::ListContainersOptions;
+use bollard::container::{ListContainersOptions, RestartContainerOptions, StopContainerOptions};
 use bollard::system::EventsOptions;
 use bollard::Docker;
 use futures_util::Stream;
@@ -41,6 +41,25 @@ pub async fn list_containers(docker: &Docker, all: bool) -> Result<Vec<Container
     }
     out.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
     Ok(out)
+}
+
+pub async fn start_container(docker: &Docker, id: &str) -> Result<()> {
+    docker.start_container::<String>(id, None).await?;
+    Ok(())
+}
+
+pub async fn stop_container(docker: &Docker, id: &str) -> Result<()> {
+    docker
+        .stop_container(id, Some(StopContainerOptions { t: 10 }))
+        .await?;
+    Ok(())
+}
+
+pub async fn restart_container(docker: &Docker, id: &str) -> Result<()> {
+    docker
+        .restart_container(id, Some(RestartContainerOptions { t: 10 }))
+        .await?;
+    Ok(())
 }
 
 #[derive(Clone, Debug)]

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ContainerInfo, ContainerStat, HostStat } from "./types";
 import { fetchContainers, openStatsStream } from "./api";
 import { HostBar } from "./components/HostBar";
@@ -20,23 +20,19 @@ export default function App() {
   const [filter, setFilter] = useState("");
   const [showCharts, setShowCharts] = useState(true);
 
-  useEffect(() => {
-    let alive = true;
-    const load = async () => {
-      try {
-        const list = await fetchContainers();
-        if (alive) setContainers(list);
-      } catch {
-        return;
-      }
-    };
-    load();
-    const t = setInterval(load, 5000);
-    return () => {
-      alive = false;
-      clearInterval(t);
-    };
+  const loadContainers = useCallback(async () => {
+    try {
+      setContainers(await fetchContainers());
+    } catch {
+      return;
+    }
   }, []);
+
+  useEffect(() => {
+    loadContainers();
+    const t = setInterval(loadContainers, 5000);
+    return () => clearInterval(t);
+  }, [loadContainers]);
 
   useEffect(() => {
     const es = openStatsStream((tick) => {
@@ -106,7 +102,7 @@ export default function App() {
               {showCharts && selected.state === "running" && (
                 <MetricsCharts containerId={selected.id} ncpu={ncpu} />
               )}
-              <LogViewer container={selected} />
+              <LogViewer container={selected} onAction={loadContainers} />
             </>
           ) : (
             <HomeView host={host} running={running} total={containers.length} />

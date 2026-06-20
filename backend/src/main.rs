@@ -90,6 +90,7 @@ async fn main() -> Result<()> {
         store,
         logs,
         stats_tx,
+        docker,
         cfg: cfg.clone(),
     };
     let app = web::router(state);
