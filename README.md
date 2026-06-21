@@ -183,4 +183,4 @@ cd ../backend && cargo build --release        # embeds dist into the binary
 
 ## License
 
-MIT
+AGPL v3

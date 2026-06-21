@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 rust-version = "1.96"
 description = "Minimal, low-overhead Docker dashboard: containers, logs, CPU/memory with history"
-license = "MIT"
+license = "AGPL-3.0-only"
 
 [[bin]]
 name = "dockui"
